@@ -70,12 +70,30 @@ type TODO struct {
     Author      string    // From git blame (optional)
     Email       string    // From git blame (optional)
     CreatedAt   time.Time // From git commit date
-    Status      string    // open, in_progress, resolved, wontfix
-    Priority    int       // 1-5, default 3
+    Status      string    // open, in_progress, blocked, resolved, wontfix, closed
+    Priority    int       // 0-4 (P0-P4), default 3
+    Assignee    string    // Assigned team member (NEW)
+    DueDate     time.Time // Deadline for completion (NEW)
+    Category    string    // Category (backend, frontend, docs, etc.) (NEW)
     Tags        []string  // user-defined tags
     Hash        string    // Content hash for deduplication
 }
 ```
+
+**Priority Mapping:**
+- `P0` (0): Critical - Must fix immediately
+- `P1` (1): High - Should fix soon
+- `P2` (2): Medium - Normal priority
+- `P3` (3): Low - Nice to have
+- `P4` (4): Backlog - Future consideration
+
+**Status Flow:**
+- `open`: Newly discovered, not started
+- `in_progress`: Being worked on
+- `blocked`: Waiting on dependency
+- `resolved`: Completed
+- `wontfix`: Deliberately not fixing
+- `closed`: Archived/duplicate
 
 ---
 
@@ -93,10 +111,13 @@ CREATE TABLE todos (
     content TEXT NOT NULL,
     author TEXT,
     email TEXT,
+    assignee TEXT,
+    due_date INTEGER,
+    category TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
-    status TEXT DEFAULT 'open' CHECK(status IN ('open', 'in_progress', 'resolved', 'wontfix')),
-    priority INTEGER DEFAULT 3 CHECK(priority BETWEEN 1 AND 5),
+    status TEXT DEFAULT 'open' CHECK(status IN ('open', 'in_progress', 'blocked', 'resolved', 'wontfix', 'closed')),
+    priority INTEGER DEFAULT 3 CHECK(priority BETWEEN 0 AND 4),
     hash TEXT NOT NULL,
     UNIQUE(hash, file_path, line_number)
 );
@@ -120,10 +141,48 @@ CREATE TABLE projects (
     last_scanned INTEGER
 );
 
+-- Time tracking (Phase 2)
+CREATE TABLE time_entries (
+    id TEXT PRIMARY KEY,
+    todo_id TEXT REFERENCES todos(id) ON DELETE CASCADE,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    duration_seconds INTEGER,
+    notes TEXT
+);
+
+-- Task relationships (Phase 2)
+CREATE TABLE relationships (
+    id TEXT PRIMARY KEY,
+    source_id TEXT REFERENCES todos(id) ON DELETE CASCADE,
+    target_id TEXT REFERENCES todos(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK(type IN ('parent', 'child', 'depends_on', 'blocked_by', 'related')),
+    created_at INTEGER NOT NULL
+);
+
+-- Activity log for audit trail (Phase 2)
+CREATE TABLE activity_log (
+    id TEXT PRIMARY KEY,
+    todo_id TEXT REFERENCES todos(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    field_changed TEXT,
+    old_value TEXT,
+    new_value TEXT,
+    actor TEXT,
+    created_at INTEGER NOT NULL
+);
+
 CREATE INDEX idx_todos_file ON todos(file_path);
 CREATE INDEX idx_todos_status ON todos(status);
 CREATE INDEX idx_todos_type ON todos(type);
 CREATE INDEX idx_todos_author ON todos(author);
+CREATE INDEX idx_todos_assignee ON todos(assignee);
+CREATE INDEX idx_todos_priority ON todos(priority);
+CREATE INDEX idx_todos_category ON todos(category);
+CREATE INDEX idx_time_entries_todo ON time_entries(todo_id);
+CREATE INDEX idx_relationships_source ON relationships(source_id);
+CREATE INDEX idx_relationships_target ON relationships(target_id);
+CREATE INDEX idx_activity_log_todo ON activity_log(todo_id);
 ```
 
 ### 3.2 Storage Location
@@ -151,11 +210,25 @@ Commands:
   scan          Scan codebase for TODOs (default: current directory)
   list          List TODOs with filtering
   show          Show TODO details
-  edit          Edit TODO status, priority, tags
+  edit          Edit TODO status, priority, tags, assignee, due date
   delete        Remove TODO from tracking
   stats         Show statistics dashboard
   sync          Sync with Git (update author info)
   watch         Watch mode for file changes
+
+  # Phase 2: Time Tracking
+  time          Track time spent on TODOs
+  timelog       Show time log entries
+
+  # Phase 2: Relationships
+  link          Link TODOs (parent/child, depends_on)
+  unlink        Remove TODO links
+
+  # Phase 3: Integrations
+  github        GitHub integration (sync issues, PRs)
+  jira          Jira integration
+  linear        Linear integration
+  notify        Configure notifications and reminders
 
   init          Initialize new project
   config        Manage configuration
@@ -183,25 +256,41 @@ scan [OPTIONS]
 
 // list command
 list [OPTIONS]
-  --status STATUS      Filter by status (open|in_progress|resolved|wontfix)
+  --status STATUS      Filter by status (open|in_progress|blocked|resolved|wontfix|closed)
   --type TYPE          Filter by type (TODO|FIXME|HACK|BUG|NOTE|XXX)
   --author AUTHOR      Filter by author
+  --assignee USER      Filter by assignee
+  --category CAT       Filter by category
   --file FILE          Filter by file path (supports glob)
   --tag TAG            Filter by tag (can repeat)
-  --priority MIN:MAX   Filter by priority range
+  --priority MIN:MAX   Filter by priority range (P0-P4)
+  --due DATE           Filter by due date (before|after|overdue)
   --since DATE         Filter by date (after)
   --until DATE         Filter by date (before)
-  --sort FIELD         Sort by (file|line|type|priority|created|updated)
-  --format FORMAT      Output format (table|json|csv|plain)
+  --sort FIELD         Sort by (file|line|type|priority|created|updated|due_date)
+  --format FORMAT      Output format (table|json|csv|plain|board)
   --limit N            Limit results
 
 // edit command
 edit [OPTIONS] <TODO-ID>
-  --status STATUS      Set status
-  --priority N        Set priority (1-5)
+  --status STATUS      Set status (open|in_progress|blocked|resolved|wontfix|closed)
+  --priority P0-P4     Set priority (0-4)
+  --assignee USER      Set assignee
+  --due-date DATE      Set due date (YYYY-MM-DD)
+  --category CAT       Set category
   --add-tag TAG        Add tag
   --remove-tag TAG     Remove tag
   --message MSG        Add comment/note
+
+// time command (Phase 2)
+time [OPTIONS] <TODO-ID>
+  start             Start timer for TODO
+  stop              Stop timer for TODO
+  --note TEXT       Add note to time entry
+
+// link command (Phase 2)
+link [OPTIONS] <SOURCE-ID> <TARGET-ID>
+  --type TYPE        Relationship type (parent|child|depends_on|blocked_by|related)
 
 // stats command
 stats [OPTIONS]
@@ -479,19 +568,41 @@ go install github.com/user/todolist@latest
 
 ## 11. Future Considerations
 
-### Phase 2 Features
+### Phase 2 Features (v0.2.0 - Enhanced Project Management)
 
-1. **Cloud Sync**: Optional cloud backend for team sharing
-2. **Web Dashboard**: Simple web UI for browsing TODOs
-3. **CI/CD Integration**: GitHub Actions, GitLab CI plugins
-4. **Custom Patterns**: User-defined regex patterns
-5. **Export**: Export to Markdown, HTML, PDF reports
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Time Tracking** | Track time spent on TODOs with start/stop timers, manual entry, notes | High |
+| **Task Relationships** | Parent/child hierarchies, depends_on, blocked_by links | High |
+| **Activity Logging** | Full audit trail of all TODO changes (who, what, when) | Medium |
+| **Full-text Search** | Search TODO content with Bleve/FTS5 | Medium |
+| **Assignees** | Assign TODOs to team members | Medium |
+| **Due Dates** | Set deadlines with overdue detection | Medium |
+| **Categories** | Organize TODOs by category (backend, frontend, docs) | Medium |
+| **Kanban Board** | Visual board view (to-do, in-progress, done) | Low |
+| **Custom Patterns** | User-defined regex patterns for TODO detection | Low |
 
-### Phase 3 Features
+### Phase 3 Features (v0.3.0 - Integrations)
 
-1. **AI Assistant**: Suggest TODO prioritization based on code analysis
-2. **Team Dashboard**: Aggregate TODOs across repositories
-3. **Slack/Teams Bot**: Notify on new TODOs, allow status updates
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **GitHub Integration** | Sync TODOs with GitHub Issues, link to PRs | High |
+| **Jira Integration** | Two-way sync with Jira issues | High |
+| **Linear Integration** | Sync with Linear workspace | Medium |
+| **Notion Integration** | Export TODOs to Notion database | Medium |
+| **Notifications** | Desktop reminders for due dates, daily digest | Medium |
+| **Slack/Teams Bot** | Interactive bot for TODO management | Low |
+| **Cloud Sync** | Optional cloud backend for team sharing | Low |
+
+### Phase 4 Features (v0.4.0 - Advanced)
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **AI Assistant** | Suggest TODO prioritization based on code analysis | Low |
+| **Team Dashboard** | Aggregate TODOs across repositories | Low |
+| **Web Dashboard** | Browser-based UI for browsing TODOs | Low |
+| **CI/CD Integration** | GitHub Actions, GitLab CI plugins | Low |
+| **Export Reports** | Export to Markdown, HTML, PDF reports | Low |
 
 ---
 
@@ -541,7 +652,13 @@ todolist/
 │   ├── edit.go
 │   ├── delete.go
 │   ├── stats.go
-│   └── watch.go
+│   ├── watch.go
+│   ├── time.go           # Phase 2: Time tracking
+│   ├── link.go          # Phase 2: Relationships
+│   ├── github.go        # Phase 3: GitHub integration
+│   ├── jira.go          # Phase 3: Jira integration
+│   ├── linear.go        # Phase 3: Linear integration
+│   └── notify.go        # Phase 3: Notifications
 ├── internal/
 │   ├── config/
 │   │   └── config.go
@@ -556,6 +673,20 @@ todolist/
 │   │   └── git.go
 │   ├── scanner/
 │   │   └── scanner.go
+│   ├── time/            # Phase 2: Time tracking
+│   │   └── time.go
+│   ├── relationships/   # Phase 2: Task relationships
+│   │   └── relations.go
+│   ├── integrations/    # Phase 3: External services
+│   │   ├── github.go
+│   │   ├── jira.go
+│   │   └── linear.go
+│   ├── notifications/   # Phase 3: Reminders
+│   │   └── notify.go
+│   ├── activity/        # Phase 2: Audit logging
+│   │   └── activity.go
+│   ├── search/          # Phase 2: Full-text search
+│   │   └── search.go
 │   └── ui/
 │       ├── table.go
 │       └── chart.go
@@ -573,14 +704,42 @@ todolist/
 ```go
 // go.mod (key dependencies)
 require (
+    // Core CLI
     github.com/spf13/cobra v1.8.0
     github.com/spf13/viper v1.18.2
+
+    // Database
     github.com/glebarez/sqlite v1.10.0
+    github.com/golang-migrate/migrate/v4 v4.17.0
+
+    // Git operations
     github.com/go-git/go-git/v5 v5.11.0
+
+    // UI/Terminal
     rivo/tview v0.0.0-20230902221635-6824ea5ebfab
     github.com/charmbracelet/lipgloss v0.9.1
     github.com/jedib0t/go-pretty/v6 v6.5.3
+
+    // Time tracking
+    github.com/datehookz/iohook v1.0.0  // Global hotkeys
+
+    // External integrations (Phase 3)
+    github.com/google/go-github/v45 v45.2.0  // GitHub API
+    github.com/andygrunwald/go-jira v1.15.1  // Jira API
+    github.com/linear/linear-go v0.0.0-20240101  // Linear API (when available)
+    github.com/notionhq/client v1.0.4         // Notion API
+
+    // Notifications (Phase 3)
+    github.com/gookit/notify v0.2.0           // Cross-platform notifications
+
+    // Logging
+    go.uber.org/zap v1.26.0
+    github.com/rs/zerolog v1.31.0
+
+    // Utilities
     github.com/google/renameio v1.0.1
     github.com/mitchellh/go-homedir v1.1.0
+    github.com/google/uuid v1.5.0
+    github.com/blevesearch/bleve/v2 v2.3.10  // Full-text search
 )
 ```
