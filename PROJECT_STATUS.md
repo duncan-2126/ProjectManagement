@@ -1,75 +1,86 @@
-# TODO Tracker CLI - Project Status
+# TODO Tracker CLI - Project Status Dashboard
+
+**Last Updated**: 2026-02-16
+**Version**: 1.0.0
 
 ## Project Overview
 
-| Metric | Value |
-|--------|-------|
-| **Version** | 1.0.0 |
-| **Status** | MVP Complete |
-| **Total Commands** | 10 |
-| **Test Coverage** | Basic |
-
-## Feature Status Dashboard
-
 ```
-╔══════════════════════════════════════════════════════════════════════════╗
-║                        TODO TRACKER CLI - PROJECT STATUS                 ║
-╠══════════════════════════════════════════════════════════════════════════╣
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    TODO TRACKER CLI - STATUS DASHBOARD                    ║
+╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                       ║
-║  MVP FEATURES (Completed)                                             ║
-║  ═══════════════════════════════════════════════════════════════════    ║
-║  [██████] init        - Project initialization                        ║
-║  [██████] scan       - Scan for TODO comments                        ║
-║  [██████] list       - List with filters                             ║
-║  [██████] show       - Show TODO details                             ║
-║  [██████] edit       - Edit TODO status/priority                      ║
-║  [██████] delete     - Delete TODOs                                  ║
-║  [██████] export     - Export (JSON/CSV/MD)                          ║
-║  [██████] sync       - Git blame integration                          ║
-║  [██████] watch      - Auto-scan on changes                          ║
-║  [██████] stats      - Statistics dashboard                          ║
+║  COMPLETED (12 Features)                                               ║
+║  ═══════════════════════════════════════════════════════════════════     ║
+║  [████████] init        - Project initialization                        ║
+║  [████████] scan       - Scan for TODO comments                        ║
+║  [████████] list       - List with filters                             ║
+║  [████████] show       - Show TODO details                             ║
+║  [████████] edit       - Edit TODO status/priority                     ║
+║  [████████] delete     - Delete TODOs                                  ║
+║  [████████] export     - Export (JSON/CSV/MD)                          ║
+║  [████████] sync       - Git blame integration                          ║
+║  [████████] watch      - Auto-scan on changes                          ║
+║  [████████] stats      - Statistics dashboard                          ║
+║  [████████] tags       - Tag management (create/list/delete)           ║
+║  [████████] time       - Time tracking (start/stop/log)                ║
+║  [████████] due       - Due dates (set/list/clear)                    ║
+║  [████████] team      - Team assignments & stats                      ║
 ║                                                                       ║
-║  PHASE 2 FEATURES (In Progress)                                       ║
-║  ═══════════════════════════════════════════════════════════════════    ║
-║  [██░░░░] tags        - Tag management (Est: 2 days)                  ║
-║  [░░░░░░] categories - Category support (Est: 1 day)                  ║
+║  IN PROGRESS                                                           ║
+║  ═══════════════════════════════════════════════════════════════════     ║
+║  [████░░░] Advanced Filtering  - Complex queries, saved filters        ║
 ║                                                                       ║
-║  PHASE 3 FEATURES (Planned)                                           ║
-║  ═══════════════════════════════════════════════════════════════════    ║
-║  [░░░░░░] time       - Time tracking (Est: 3 days)                    ║
-║  [░░░░░░] due        - Due dates & reminders (Est: 2 days)           ║
-║  [░░░░░░] filters   - Advanced filtering (Est: 2 days)              ║
-║  [░░░░░░] team      - Team management (Est: 3 days)                  ║
+║  PLANNED                                                               ║
+║  ═══════════════════════════════════════════════════════════════════     ║
+║  [░░░░░░] TUI Dashboard       - Rich terminal UI                    ║
+║  [░░░░░░] GitHub Integration  - Sync with GitHub Issues              ║
+║  [░░░░░░] Jira Integration   - Sync with Jira                       ║
+║  [░░░░░░] VS Code Extension  - IDE integration                        ║
+║  [░░░░░░] Web Dashboard      - Browser-based UI                     ║
 ║                                                                       ║
-║  FUTURE / NICE TO HAVE                                                ║
-║  ═══════════════════════════════════════════════════════════════════    ║
-║  [░░░░░░] integrations - GitHub/Jira/Linear sync                     ║
-║  [░░░░░░] web-ui     - Web dashboard                                 ║
-║  [░░░░░░] vscode    - VS Code extension                             ║
-║  [░░░░░░] ai        - AI prioritization                              ║
-║                                                                       ║
-╚══════════════════════════════════════════════════════════════════════════╝
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-## Timeline Estimate
+## Team Utilization
 
-| Phase | Features | Estimated Time |
-|-------|----------|----------------|
-| MVP | 10 commands | ✅ Complete |
-| Phase 2 | Tags, Categories | 3 days |
-| Phase 3 | Time, Due Dates, Filters, Team | 10 days |
-| Future | Integrations, Web UI, AI | TBD |
+| Agent | Role | Current Task | Status |
+|-------|------|--------------|--------|
+| Claude Code | Developer | Building features | ✅ Active |
+| You | PM/Reviewer | Review & Merge | ✅ Active |
 
-**Total Estimated Time to Phase 3**: ~13 days
+## Timeline
 
-## Current Sprint
+| Phase | Features | Status | ETA |
+|-------|----------|--------|-----|
+| MVP | 10 commands | ✅ Done | - |
+| Phase 2 | Tags, Time, Due, Team | ✅ Done | - |
+| Phase 3 | Advanced Filters | 🔄 In Progress | 1 day |
+| Phase 4 | TUI, Integrations | 📋 Planned | 3 days |
 
-**Sprint 1**: Tags & Categories
-- **Start**: Today
-- **Goal**: Complete tag management system
-- **Tasks**:
-  - [ ] Create tag command
-  - [ ] List tags command
-  - [ ] Delete tag command
-  - [ ] Associate tags with TODOs
-  - [ ] Filter by tags
+## Git Activity
+
+| Branch | Feature | PR # | Status |
+|--------|---------|------|--------|
+| main | All completed | - | ✅ Merged |
+
+## Quick Commands
+
+```bash
+# New project
+todo init
+
+# Scan & manage
+todo scan
+todo list --status open
+
+# Advanced
+todo tag create urgent
+todo time start <id>
+todo due set <id> 1w
+todo assign <id> john
+
+# View
+todo stats
+todo team stats
+```
