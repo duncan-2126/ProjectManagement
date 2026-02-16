@@ -13,11 +13,11 @@ import (
 
 // Language represents a programming language with comment patterns
 type Language struct {
-	Name         string
-	Extensions   []string
-	SingleLine   []string // Comment prefixes
-	MultiLine    []string // Multi-line comment start/end pairs
-	Shebangs    []string
+	Name       string
+	Extensions []string
+	SingleLine []string // Comment prefixes
+	MultiLine  []string // Multi-line comment start/end pairs
+	Shebangs   []string
 }
 
 // Supported languages

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
@@ -13,7 +15,7 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list [@<filter_name>]",
 	Short: "List tracked TODOs",
 	Long: `List all tracked TODOs with optional filtering.
 
@@ -21,6 +23,8 @@ Examples:
   todo list                    # List all TODOs
   todo list --status open      # List only open TODOs
   todo list --type FIXME       # List only FIXMEs
+  todo list @my-filter         # Use saved filter
+  todo list --stale            # List stale TODOs
   todo list --format json      # Output as JSON`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := cmd.Context().(*config.Config)
@@ -40,6 +44,30 @@ Examples:
 		// Build filters
 		filters := make(map[string]interface{})
 
+		// Check for stale flag
+		staleFlag, _ := cmd.Flags().GetBool("stale")
+
+		// Check for @filter syntax in args
+		var filterName string
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "@") {
+				filterName = strings.TrimPrefix(arg, "@")
+				break
+			}
+		}
+
+		// If filter name provided, load the saved filter
+		if filterName != "" {
+			filter, err := db.GetSavedFilter(filterName)
+			if err != nil {
+				return fmt.Errorf("filter not found: %s", filterName)
+			}
+			// Parse saved filter query into filters
+			filters = parseQuery(filter.Query)
+			fmt.Printf("Using filter: @%s -> %s\n", filterName, filter.Query)
+		}
+
+		// Apply command-line flags (override saved filter)
 		status, _ := cmd.Flags().GetString("status")
 		if status != "" {
 			filters["status"] = status
@@ -65,10 +93,28 @@ Examples:
 			filters["priority"] = priority
 		}
 
+		assignee, _ := cmd.Flags().GetString("assignee")
+		if assignee != "" {
+			filters["assignee"] = assignee
+		}
+
 		// Get TODOs
-		todos, err := db.GetTODOs(filters)
-		if err != nil {
-			return fmt.Errorf("failed to get TODOs: %w", err)
+		var todos []database.TODO
+		if staleFlag {
+			// Get stale days from config or use default
+			staleDays := viper.GetInt("stale.days_since_update")
+			if staleDays == 0 {
+				staleDays = 14
+			}
+			todos, err = db.GetStaleTODOs(staleDays)
+			if err != nil {
+				return fmt.Errorf("failed to get stale TODOs: %w", err)
+			}
+		} else {
+			todos, err = db.GetTODOs(filters)
+			if err != nil {
+				return fmt.Errorf("failed to get TODOs: %w", err)
+			}
 		}
 
 		// Get output format
@@ -83,10 +129,10 @@ Examples:
 			fmt.Println(string(jsonBytes))
 
 		case "csv":
-			fmt.Println("ID,FilePath,LineNumber,Type,Content,Status,Priority,Author")
+			fmt.Println("ID,FilePath,LineNumber,Type,Content,Status,Priority,Author,Assignee")
 			for _, t := range todos {
-				fmt.Printf("%s,%s,%d,%s,\"%s\",%s,%s,%s\n",
-					t.ID, t.FilePath, t.LineNumber, t.Type, t.Content, t.Status, t.Priority, t.Author)
+				fmt.Printf("%s,%s,%d,%s,\"%s\",%s,%s,%s,%s\n",
+					t.ID, t.FilePath, t.LineNumber, t.Type, t.Content, t.Status, t.Priority, t.Author, t.Assignee)
 			}
 
 		default: // table
@@ -96,17 +142,21 @@ Examples:
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tFile\tLine\tType\tStatus\tPriority\tContent")
-			fmt.Fprintln(w, "---\t----\t----\t----\t------\t--------\t-------")
+			fmt.Fprintln(w, "ID\tFile\tLine\tType\tStatus\tPriority\tAssignee\tContent")
+			fmt.Fprintln(w, "---\t----\t----\t----\t------\t--------\t---------\t-------")
 
 			for _, t := range todos {
 				// Truncate content if too long
 				content := t.Content
-				if len(content) > 50 {
-					content = content[:47] + "..."
+				if len(content) > 40 {
+					content = content[:37] + "..."
 				}
-				fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\n",
-					t.ID[:8], t.FilePath, t.LineNumber, t.Type, t.Status, t.Priority, content)
+				assigneeStr := t.Assignee
+				if assigneeStr == "" {
+					assigneeStr = "-"
+				}
+				fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\n",
+					t.ID[:8], t.FilePath, t.LineNumber, t.Type, t.Status, t.Priority, assigneeStr, content)
 			}
 			w.Flush()
 
@@ -123,7 +173,9 @@ func init() {
 	listCmd.Flags().StringP("author", "a", "", "Filter by author")
 	listCmd.Flags().StringP("file", "f", "", "Filter by file path")
 	listCmd.Flags().StringP("priority", "p", "", "Filter by priority (P0-P4)")
+	listCmd.Flags().StringP("assignee", "", "", "Filter by assignee")
 	listCmd.Flags().StringP("format", "o", "table", "Output format (table, json, csv)")
+	listCmd.Flags().BoolP("stale", "", false, "Show stale TODOs (no update in configured days)")
 
 	rootCmd.AddCommand(listCmd)
 }
