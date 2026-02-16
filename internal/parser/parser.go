@@ -232,7 +232,6 @@ func (p *Parser) ParseFile(filePath string) ([]ParsedTODO, error) {
 
 	// Track multi-line comments
 	inMLComment := false
-	mlStartToken := ""
 
 	for lineNum, line := range lines {
 		// Skip binary files

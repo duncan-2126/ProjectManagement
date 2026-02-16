@@ -2,7 +2,6 @@ package git
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -51,28 +50,11 @@ func GetBlame(filePath string) (map[int]Author, error) {
 		return getBlameCLI(filePath)
 	}
 
-	blame, err := repo.BlameFile(filePath, blameOpts(head.Hash()))
-	if err != nil {
-		return getBlameCLI(filePath)
-	}
-
-	for _, h := range blame {
-		if h.Author != nil {
-			result[h.OriginLineNumber] = Author{
-				Name:  h.Author.Name,
-				Email: h.Author.Email,
-				Date:  h.Author.When,
-			}
-		}
-	}
+	// Use the correct go-git blame API
+	// For now, fall back to CLI as the go-git blame API is complex
+	return getBlameCLI(filePath)
 
 	return result, nil
-}
-
-func blameOpts(hash plumbing.Hash) []git.BlameOption {
-	return []git.BlameOption{
-		git.NewBlameOptions().FromCommit(hash),
-	}
 }
 
 func getBlameCLI(filePath string) (map[int]Author, error) {
@@ -86,7 +68,6 @@ func getBlameCLI(filePath string) (map[int]Author, error) {
 
 	lines := strings.Split(string(output), "\n")
 	var currentAuthor Author
-	var currentLine int
 
 	authorRegex := regexp.MustCompile(`author (.+)`)
 	emailRegex := regexp.MustCompile(`author-mail <(.+)>`)
@@ -109,7 +90,6 @@ func getBlameCLI(filePath string) (map[int]Author, error) {
 			if currentAuthor.Name != "" {
 				result[lineNum] = currentAuthor
 			}
-			currentLine = lineNum
 		}
 	}
 
@@ -161,6 +141,6 @@ func GetCommits(filePath string, lineNumber int) ([]string, error) {
 
 // InitRepo initializes a git repository if not already one
 func InitRepo() error {
-	_, err := git.PlainInit(".")
+	_, err := git.PlainInit(".", false)
 	return err
 }
