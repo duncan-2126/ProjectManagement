@@ -18,7 +18,7 @@ var tagCmd = &cobra.Command{
 var tagCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a new tag",
-	Long:  `Create a new tag that can be applied to TODOs.
+	Long: `Create a new tag that can be applied to TODOs.
 
 Example:
   todo tag create urgent
@@ -48,7 +48,7 @@ Example:
 var tagListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all tags",
-	Long:  `List all tags.
+	Long: `List all tags.
 
 Example:
   todo tag list`,
@@ -82,7 +82,7 @@ Example:
 var tagDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete a tag",
-	Long:  `Delete a tag. This removes the tag from all TODOs.
+	Long: `Delete a tag. This removes the tag from all TODOs.
 
 Example:
   todo tag delete urgent`,
@@ -110,7 +110,7 @@ Example:
 var tagAddCmd = &cobra.Command{
 	Use:   "add <todo-id> <tag-name>",
 	Short: "Add a tag to a TODO",
-	Long:  `Add a tag to a TODO.
+	Long: `Add a tag to a TODO.
 
 Example:
   todo tag add abc123 urgent`,
@@ -152,7 +152,7 @@ Example:
 var tagRemoveCmd = &cobra.Command{
 	Use:   "remove <todo-id> <tag-name>",
 	Short: "Remove a tag from a TODO",
-	Long:  `Remove a tag from a TODO.
+	Long: `Remove a tag from a TODO.
 
 Example:
   todo tag remove abc123 urgent`,
@@ -174,10 +174,10 @@ Example:
 
 		var tag database.Tag
 		if err := db.First(&tag, "name = ?", tagName).Error; err != nil {
-			return fmt.Errorf("tag not found: %s", tag}
+			return fmt.Errorf("tag not found: %s", tagName)
+		}
 
-		db.WhereName)
-		("todo_id = ? AND tag_id = ?", todo.ID, tag.ID).Delete(&database.TODOTag{})
+		db.Where("todo_id = ? AND tag_id = ?", todo.ID, tag.ID).Delete(&database.TODOTag{})
 
 		fmt.Printf("Removed tag '%s' from TODO %s\n", tagName, todoID[:8])
 		return nil

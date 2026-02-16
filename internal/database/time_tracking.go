@@ -8,13 +8,13 @@ import (
 
 // TimeEntry represents time spent on a TODO
 type TimeEntry struct {
-	ID          string    `gorm:"primaryKey;type:text" json:"id"`
-	TODOID      string    `gorm:"type:text;not null;index" json:"todo_id"`
-	StartTime   time.Time `gorm:"not null" json:"start_time"`
+	ID          string     `gorm:"primaryKey;type:text" json:"id"`
+	TODOID      string     `gorm:"type:text;not null;index" json:"todo_id"`
+	StartTime   time.Time  `gorm:"not null" json:"start_time"`
 	EndTime     *time.Time `gorm:"type:timestamp" json:"end_time,omitempty"`
-	Duration    int       `gorm:"type:integer" json:"duration"` // minutes
-	Description string    `gorm:"type:text" json:"description"`
-	CreatedAt   time.Time `gorm:"not null" json:"created_at"`
+	Duration    int        `gorm:"type:integer" json:"duration"` // minutes
+	Description string     `gorm:"type:text" json:"description"`
+	CreatedAt   time.Time  `gorm:"not null" json:"created_at"`
 }
 
 // StartTimer starts a timer for a TODO

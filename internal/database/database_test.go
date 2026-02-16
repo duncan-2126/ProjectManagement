@@ -1,9 +1,9 @@
 package database
 
 import (
-	"testing"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
@@ -16,27 +17,66 @@ var filterCmd = &cobra.Command{
 }
 
 var filterSaveCmd = &cobra.Command{
-	Use:   "save <name> <query>",
-	Short: "Save a filter query",
-	Long: `Save a complex filter query for later use.
+	Use:   "save <name>",
+	Short: "Save a filter query from flags",
+	Long: `Save a complex filter query for later use using command-line flags.
 
 Example:
-  todo filter save my-open "status=open&priority=P0"
-  todo filter save bugs "type=BUG"`,
-	Args: cobra.ExactArgs(2),
+  todo filter save my-open --status open --priority P0
+  todo filter save bugs --type BUG
+  todo filter save my-tasks --assignee me
+  todo filter save auth-work --file "**/auth*.ts" --status in_progress`,
+	Args: cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		projectPath, _ := os.Getwd()
 		db, _ := database.New(projectPath)
 
 		name := args[0]
-		query := args[1]
+
+		// Build query from flags
+		var queryParts []string
+
+		status, _ := cmd.Flags().GetString("status")
+		if status != "" {
+			queryParts = append(queryParts, "status="+status)
+		}
+
+		priority, _ := cmd.Flags().GetString("priority")
+		if priority != "" {
+			queryParts = append(queryParts, "priority="+priority)
+		}
+
+		assignee, _ := cmd.Flags().GetString("assignee")
+		if assignee != "" {
+			queryParts = append(queryParts, "assignee="+assignee)
+		}
+
+		author, _ := cmd.Flags().GetString("author")
+		if author != "" {
+			queryParts = append(queryParts, "author="+author)
+		}
+
+		todoType, _ := cmd.Flags().GetString("type")
+		if todoType != "" {
+			queryParts = append(queryParts, "type="+todoType)
+		}
+
+		filePath, _ := cmd.Flags().GetString("file")
+		if filePath != "" {
+			queryParts = append(queryParts, "file="+filePath)
+		}
+
+		query := strings.Join(queryParts, "&")
+		if query == "" {
+			query = "all=true"
+		}
 
 		filter, err := db.CreateSavedFilter(name, query)
 		if err != nil {
 			return fmt.Errorf("failed to save filter: %w", err)
 		}
 
-		fmt.Printf("Saved filter: %s\n", filter.Name)
+		fmt.Printf("Saved filter: %s -> %s\n", filter.Name, filter.Query)
 		return nil
 	},
 }
@@ -61,7 +101,7 @@ var filterListCmd = &cobra.Command{
 
 		fmt.Println("Saved Filters:")
 		for _, f := range filters {
-			fmt.Printf("  %s: %s\n", f.Name, f.Query)
+			fmt.Printf("  @%s: %s\n", f.Name, f.Query)
 		}
 		return nil
 	},
@@ -112,17 +152,44 @@ var filterRunCmd = &cobra.Command{
 
 		fmt.Printf("Results for filter '%s':\n\n", name)
 		for _, t := range todos {
-			fmt.Printf("  [%s] %s - %s\n", t.Priority, t.Status, t.Content[:min(60, len(t.Content))])
+			content := t.Content
+			if len(content) > 60 {
+				content = content[:57] + "..."
+			}
+			fmt.Printf("  [%s] %s - %s\n", t.Priority, t.Status, content)
 		}
 		fmt.Printf("\nTotal: %d TODOs\n", len(todos))
 		return nil
 	},
 }
 
+// parseQuery parses a query string into a filters map
+// Supports: status=open&priority=P0&assignee=me&type=BUG&file=path&author=name
 func parseQuery(query string) map[string]interface{} {
 	filters := make(map[string]interface{})
-	// Simple key=value parsing
-	// In production, use proper URL parsing
+
+	if query == "all=true" {
+		return filters
+	}
+
+	parts := strings.Split(query, "&")
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) == 2 {
+			key := kv[0]
+			value := kv[1]
+			switch key {
+			case "status", "priority", "assignee", "author", "type", "file":
+				if value != "" {
+					filters[key] = value
+				}
+			}
+		}
+	}
+
 	return filters
 }
 
@@ -134,6 +201,13 @@ func min(a, b int) int {
 }
 
 func init() {
+	filterSaveCmd.Flags().StringP("status", "s", "", "Filter by status (open, in_progress, resolved, wontfix)")
+	filterSaveCmd.Flags().StringP("priority", "p", "", "Filter by priority (P0-P4)")
+	filterSaveCmd.Flags().StringP("assignee", "a", "", "Filter by assignee")
+	filterSaveCmd.Flags().StringP("author", "", "", "Filter by author")
+	filterSaveCmd.Flags().StringP("type", "t", "", "Filter by type (TODO, FIXME, HACK, BUG, NOTE, XXX)")
+	filterSaveCmd.Flags().StringP("file", "f", "", "Filter by file path")
+
 	filterCmd.AddCommand(filterSaveCmd)
 	filterCmd.AddCommand(filterListCmd)
 	filterCmd.AddCommand(filterDeleteCmd)
