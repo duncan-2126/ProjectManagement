@@ -1,0 +1,33 @@
+name: Automated Status Commit
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  commit-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Git
+        run: |
+          git config user.name "Claude Agent"
+          git config user.email "noreply@anthropic.com"
+      - name: Generate status snapshot
+        run: |
+          mkdir -p deployment/status
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > deployment/status/timestamp.txt
+          echo "Task list:" > deployment/status/status.txt
+          git ls-files | grep '^Task ' | while read -r line; do echo "$line" >> deployment/status/status.txt; done
+      - name: Commit and push
+        run: |
+          git add deployment/status
+          git commit -m "Automatic status snapshot $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
