@@ -1,0 +1,88 @@
+# .github/workflows/agent-team.yml
+name: "Agent‑Team Orchestration"
+
+on:
+  push:
+    branches: [ feature/web-gui-automation ]
+  schedule:
+    - cron: '*/15 * * * *'   # 15‑minute status runs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go vet ./...
+      - name: Run unit tests
+        run: go test ./cmd -v -coverprofile=coverage.out
+      - name: Publish coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.out
+
+  frontend:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install React deps
+        run: yarn install
+      - name: Build React app
+        run: yarn build
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: web/dist
+
+  qa:
+    needs: [build, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: react-build
+      - name: Install Playwright
+        run: npx playwright install-deps
+      - name: Run Playwright tests
+        run: npx playwright test
+
+  deploy:
+    needs: [qa]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit docs
+        run: |
+          git config user.email "ci@example.com"
+          git config user.name "CI Bot"
+          git add README.md
+          git commit -m "docs: update serve description"
+          git push origin feature/web-gui-automation
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${BOT_TOKEN}/sendMessage \
+            -d chat_id=${CHAT_ID} \
+            -d text="✅ *Agent‑Team* finished. PR ready to merge."
