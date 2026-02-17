@@ -25,11 +25,6 @@ var dashboardCmd = &cobra.Command{
 			return err
 		}
 
-		stats, err := db.GetStats()
-		if err != nil {
-			return err
-		}
-
 		// Calculate metrics
 		total := len(todos)
 		open := 0

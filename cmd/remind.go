@@ -6,7 +6,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,12 +19,10 @@ var remindCmd = &cobra.Command{
 Configure reminder days with:
   todo config set notifications.due-days-before 3,1
 
-Examples:
+	Examples:
   todo remind              # Show TODOs due within configured days
   todo remind --days 7     # Show TODOs due within 7 days`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := cmd.Context().(*config.Config)
-
 		// Get project path
 		projectPath, err := os.Getwd()
 		if err != nil {

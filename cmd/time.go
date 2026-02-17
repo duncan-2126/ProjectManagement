@@ -91,7 +91,7 @@ Example:
 			desc = args[2]
 		}
 
-		entry, err := db.AddManualTime(todoID, minutes, desc)
+		_, err := db.AddManualTime(todoID, minutes, desc)
 		if err != nil {
 			return err
 		}

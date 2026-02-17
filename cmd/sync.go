@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -233,7 +234,7 @@ func exportToGitHub() error {
 }
 
 // Jira export command
-var jiraCmd = &cobra.Command{
+var jiraSyncCmd = &cobra.Command{
 	Use:   "jira",
 	Short: "Sync TODOs with Jira",
 	Long: `Export TODOs to Jira issues.
@@ -361,14 +362,13 @@ func exportToJira() error {
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 201 {
-			fmt.Printf("Failed to create Jira issue for TODO %d: HTTP %d\n", i+1, resp.StatusCode)
-			// Read error response for debugging
-			var buf bytes.Buffer
-			resp.Body.Read(&buf)
-			fmt.Printf("Response: %s\n", buf.String())
-			continue
-		}
+			if resp.StatusCode != 201 {
+				fmt.Printf("Failed to create Jira issue for TODO %d: HTTP %d\n", i+1, resp.StatusCode)
+				// Read error response for debugging
+				body, _ := io.ReadAll(resp.Body)
+				fmt.Printf("Response: %s\n", string(body))
+				continue
+			}
 
 		var result map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&result)
@@ -429,11 +429,11 @@ Jira:
 		// Handle integration settings
 		if strings.HasPrefix(key, "integration.") {
 			parts := strings.Split(key, ".")
-			if len(parts) != 3 {
-				return fmt.Errorf("invalid integration key format. Use: integration.<service>.<field>")
-			}
-			service := parts[1]
-			field := parts[2]
+				if len(parts) != 3 {
+					return fmt.Errorf("invalid integration key format. Use: integration.<service>.<field>")
+				}
+				_ = parts[1]
+				_ = parts[2]
 
 			// Map field names to config keys
 			fieldMap := map[string]string{
@@ -505,10 +505,10 @@ func init() {
 
 	// Add GitHub and Jira subcommands
 	githubCmd.Flags().Bool("export", false, "Export TODOs to GitHub Issues")
-	jiraCmd.Flags().Bool("export", false, "Export TODOs to Jira")
+	jiraSyncCmd.Flags().Bool("export", false, "Export TODOs to Jira")
 
 	syncCmd.AddCommand(githubCmd)
-	syncCmd.AddCommand(jiraCmd)
+	syncCmd.AddCommand(jiraSyncCmd)
 
 	// Add config commands
 	configCmd.AddCommand(configSetCmd)

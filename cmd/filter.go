@@ -193,13 +193,6 @@ func parseQuery(query string) map[string]interface{} {
 	return filters
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func init() {
 	filterSaveCmd.Flags().StringP("status", "s", "", "Filter by status (open, in_progress, resolved, wontfix)")
 	filterSaveCmd.Flags().StringP("priority", "p", "", "Filter by priority (P0-P4)")

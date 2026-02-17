@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // Author represents git author information
@@ -44,9 +43,7 @@ func GetBlame(filePath string) (map[int]Author, error) {
 		return getBlameCLI(filePath)
 	}
 
-	// Get the file content and blame
-	head, err := repo.Head()
-	if err != nil {
+	if _, err := repo.Head(); err != nil {
 		return getBlameCLI(filePath)
 	}
 

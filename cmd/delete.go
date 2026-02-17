@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 )

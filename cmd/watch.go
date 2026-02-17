@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/duncan-2126/ProjectManagement/internal/parser"
 	"github.com/spf13/cobra"

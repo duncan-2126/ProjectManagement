@@ -7,7 +7,8 @@ import (
 
 // Execute runs the root command
 func Execute(cfg *config.Config) error {
-	return rootCmd.ExecuteContext(cfg)
+	_ = cfg
+	return rootCmd.Execute()
 }
 
 var rootCmd = &cobra.Command{

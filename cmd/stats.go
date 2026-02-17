@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +35,8 @@ Example:
 		}
 
 		// Display stats
-		fmt.Println("=== TODO Statistics ===\n")
+		fmt.Println("=== TODO Statistics ===")
+		fmt.Println()
 
 		total := stats["total"].(int64)
 		fmt.Printf("Total TODOs: %d\n\n", total)

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +17,7 @@ var searchCmd = &cobra.Command{
 	Short: "Search TODOs by content or pattern",
 	Long: `Search TODOs using full-text search, regex, or field-specific queries.
 
-Examples:
+	Examples:
   todo search "authentication error"          # Full-text search in content
   todo search --regex "TODO|FIXME|XXX"        # Regex pattern matching
   todo search --field content --match "login" # Search in specific field
@@ -27,8 +26,6 @@ Examples:
   todo search "performance" --priority P0     # Combined with priority filter`,
 	Args: cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := cmd.Context().(*config.Config)
-
 		projectPath, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("failed to get current directory: %w", err)

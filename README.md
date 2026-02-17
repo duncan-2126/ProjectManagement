@@ -9,6 +9,7 @@ A command-line tool to help developers and QA track TODO comments across their c
 - **Status Workflow**: Track TODOs from open to resolved
 - **Priority Levels**: P0-P4 priority system
 - **Git Integration**: Author attribution via git blame
+- **Web GUI**: React dashboard and Kanban/list/search views via `todo serve`
 - **Export Options**: JSON, CSV, and Markdown export
 - **Watch Mode**: Auto-scan on file changes
 - **Statistics Dashboard**: Visualize your technical debt
@@ -217,6 +218,21 @@ go build -o todo .
 GOOS=darwin GOARCH=amd64 go build -o todo-darwin-amd64 .
 GOOS=linux GOARCH=amd64 go build -o todo-linux-amd64 .
 GOOS=windows GOARCH=amd64 go build -o todo.exe .
+```
+
+### Web GUI Build
+
+```bash
+cd web
+npm install
+npm run build
+cd ..
+```
+
+Then run:
+
+```bash
+todo serve --host 127.0.0.1 --port 8080
 ```
 
 ## Supported Languages

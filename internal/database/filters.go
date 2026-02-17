@@ -2,6 +2,8 @@ package database
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // SavedFilter represents a saved filter query

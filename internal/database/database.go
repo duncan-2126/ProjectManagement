@@ -86,12 +86,7 @@ func New(projectPath string) (*DB, error) {
 	dbPath := filepath.Join(todoDir, "todos.db")
 
 	// Open SQLite database
-	db, err := sqlite.Open(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
-	}
-
-	gormDB, err := gorm.Open(db, &gorm.Config{})
+	gormDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
@@ -481,6 +476,7 @@ func (db *DB) GetOverdueTODOs() ([]TODO, error) {
 	now := time.Now()
 	err := db.Where("due_date IS NOT NULL AND due_date < ? AND status NOT IN (?, ?)", now, "closed", "resolved").Order("due_date ASC").Find(&todos).Error
 	return todos, err
+}
 
 // GetTags returns all tags
 func (db *DB) GetTags() ([]Tag, error) {

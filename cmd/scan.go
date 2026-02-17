@@ -24,7 +24,7 @@ Example:
   todo scan --exclude node_modules --exclude vendor`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := cmd.Context().(*config.Config)
+		cfg := config.Load()
 
 		// Get path to scan
 		path := "."

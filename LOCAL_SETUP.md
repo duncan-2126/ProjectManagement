@@ -1,95 +1,71 @@
-# LOCAL_SETUP.md - Countdowns (feature/CCDC)
+# LOCAL_SETUP.md - ProjectManagement
 
-## Prerequisites
+## 1. Prerequisites
 
-- **Node.js** 18.x or later
-- **npm** or **pnpm**
-- **Git**
+- Go `1.21+`
+- Node.js `18+` and `npm`
+- Git
 
-## Setup Instructions
-
-### 1. Clone the Repository
+## 2. Clone and Enter Repo
 
 ```bash
-git clone https://github.com/duncan-2126/Countdowns.git
-cd Countdowns
-git checkout feature/CCDC
+git clone https://github.com/duncan-2126/ProjectManagement.git
+cd ProjectManagement
 ```
 
-### 2. Install Dependencies
+## 3. Install/Sync Dependencies
 
 ```bash
-npm install
-# or
-pnpm install
+go mod tidy
+cd web && npm install && cd ..
 ```
 
-### 3. Start Development Server
+## 4. Build and Verify
 
 ```bash
-npm run dev
+go test ./...
+go build ./...
+cd web && npm run build && cd ..
 ```
 
-The application will start at **http://localhost:3000**
+Expected result:
+- Go tests pass
+- Go build succeeds
+- Web build succeeds (Vite may print a chunk-size warning; this is non-blocking)
 
-### 4. Build for Production (Optional)
+## 5. First Successful Boot (CLI + Web)
 
-Single configuration:
+### CLI
+
 ```bash
-NEXT_PUBLIC_DISPLAY_TYPE=centralLeft NEXT_PUBLIC_SCHEDULE_TYPE=snowShow npm run build
+go run . init
+go run . scan
+go run . list
 ```
 
-All configurations:
+### Web GUI
+
 ```bash
-npm run build:all
+go run . serve --host 127.0.0.1 --port 8080
 ```
 
-Output is in the `out/` directory.
+Open:
+- `http://127.0.0.1:8080`
+- API health check by listing TODOs: `http://127.0.0.1:8080/api/todos`
 
-## Known Issues
+## 6. Troubleshooting
 
-### ⚠️ Schedule Dates Are Expired
-The schedule data in `src/data/scheduleData.ts` contains dates from November-December **2025**. As of February 2026, all events are in the past, so the countdown will show "No events scheduled."
+- If `go test` fails with cache permission issues, run:
 
-**Fix**: Update the schedule dates to future dates (e.g., 2026 or later).
+```bash
+mkdir -p /tmp/gocache
+GOCACHE=/tmp/gocache go test ./...
+```
 
-### ⚠️ Missing Video Assets
-Video files expected at `/assets/{scheduleType}/{displayType}.mp4` do not exist. Video backgrounds will 404.
+- If `todo serve` cannot find frontend assets, build the web app first:
 
-**Fix**: Add video files to `public/assets/{snowShow,lightShow}/` directories.
+```bash
+cd web && npm run build && cd ..
+```
 
-### ⚠️ Missing Custom Font
-The font file `public/font/ProximaNova-Bold.otf` is referenced but not present.
-
-**Fix**: Add the font file or remove the font preload reference in `src/app/layout.tsx`.
-
-### ⚠️ URL Parameters Don't Work
-The README claims `?display=centralLeft` and `?schedule=lightShow` work for development, but only environment variables are used.
-
-## Display Types & Resolutions
-
-| Display Type | Resolution |
-|--------------|------------|
-| centralLeft | 1440x675 |
-| centralRight | 1440x675 |
-| sElevator | 1920x480 |
-| ddTec | 1080x1920 |
-| sportCheck | 1632x816 |
-| serviceDesk | 1496x340 |
-| bayDundas | 603x350 |
-| atrium | 3520x1980 |
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build with env vars |
-| `npm run build:all` | Build all 15 configurations |
-| `npm run test` | Run Jest tests |
-| `npm run clean` | Remove out/ and .next/ |
-
-## Environment Variables
-
-- `NEXT_PUBLIC_DISPLAY_TYPE` - Display layout (e.g., centralLeft)
-- `NEXT_PUBLIC_SCHEDULE_TYPE` - Schedule type (snowShow or lightShow)
+- If your local document refers to `feature/CCDC`, note that this repository currently exposes feature branches such as `feature/web-gui`, `feature/due-dates`, and `feature/time-tracking`, but not `feature/CCDC`.

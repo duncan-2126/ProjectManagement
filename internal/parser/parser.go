@@ -124,7 +124,7 @@ var TODOTypes = []string{
 }
 
 // Pattern to match TODO comments
-var todoPattern = regexp.MustCompile(`(?i)\b(TODO|FIXME|HACK|BUG|NOTE|XXX)\s*(\([^)]+\))?\s*[:\-]?\s*(.*)$`)
+var todoPattern = regexp.MustCompile(`(?i)^\s*(?://+|#+|\*+|--+)?\s*(TODO|FIXME|HACK|BUG|NOTE|XXX)\s*(\([^)]+\))?\s*[:\-]?\s*(.*)$`)
 
 // ParsedTODO represents a parsed TODO comment
 type ParsedTODO struct {
@@ -247,13 +247,12 @@ func (p *Parser) ParseFile(filePath string) ([]ParsedTODO, error) {
 				startToken := lang.MultiLine[i]
 				endToken := lang.MultiLine[i+1]
 
-				if !inMLComment && strings.Contains(trimmed, startToken) {
-					inMLComment = true
-					mlStartToken = startToken
-					// Check if comment ends on same line
-					if strings.Contains(trimmed, endToken) {
-						inMLComment = false
-					}
+					if !inMLComment && strings.Contains(trimmed, startToken) {
+						inMLComment = true
+						// Check if comment ends on same line
+						if strings.Contains(trimmed, endToken) {
+							inMLComment = false
+						}
 					trimmed = extractMLComment(trimmed, startToken, endToken)
 				} else if inMLComment && strings.Contains(trimmed, endToken) {
 					inMLComment = false

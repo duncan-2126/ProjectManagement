@@ -6,7 +6,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,12 +21,10 @@ Configure stale detection with:
   todo config set stale.days-open 30
   todo config set stale.days-since-update 14
 
-Examples:
+	Examples:
   todo stale              # List stale TODOs based on config
   todo stale --days 30    # List TODOs not updated in 30 days`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := cmd.Context().(*config.Config)
-
 		// Get project path
 		projectPath, err := os.Getwd()
 		if err != nil {

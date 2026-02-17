@@ -6,9 +6,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
-	"time"
 
-	"github.com/duncan-2126/ProjectManagement/internal/config"
 	"github.com/duncan-2126/ProjectManagement/internal/database"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,8 +25,6 @@ Examples:
   todo list --stale            # List stale TODOs
   todo list --format json      # Output as JSON`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg := cmd.Context().(*config.Config)
-
 		// Get project path
 		projectPath, err := os.Getwd()
 		if err != nil {
