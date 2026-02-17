@@ -9,7 +9,8 @@ A command-line tool to help developers and QA track TODO comments across their c
 - **Status Workflow**: Track TODOs from open to resolved
 - **Priority Levels**: P0-P4 priority system
 - **Git Integration**: Author attribution via git blame
-- **Web GUI**: React dashboard and Kanban/list/search views via `todo serve`
+- **Web GUI**: React dashboard and Kanban/list/search views via `todo serve` (run `todo serve` to start the web server)
+
 - **Export Options**: JSON, CSV, and Markdown export
 - **Watch Mode**: Auto-scan on file changes
 - **Statistics Dashboard**: Visualize your technical debt
